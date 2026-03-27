@@ -15,6 +15,7 @@ const REDIRECT = `http://localhost:${PORT}/callback`;
 const SCOPES = [
   'https://mail.google.com/',
   'https://www.googleapis.com/auth/gmail.settings.basic',
+  'https://www.googleapis.com/auth/calendar',
 ].join(' ');
 
 const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +

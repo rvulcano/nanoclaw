@@ -56,6 +56,7 @@ import {
   loadSenderAllowlist,
   shouldDropMessage,
 } from './sender-allowlist.js';
+import { initCalendar } from './google-calendar.js';
 import { startSchedulerLoop } from './task-scheduler.js';
 import { Channel, NewMessage, RegisteredGroup } from './types.js';
 import { logger } from './logger.js';
@@ -594,6 +595,11 @@ async function main(): Promise<void> {
   if (channels.length === 0) {
     logger.fatal('No channels connected');
     process.exit(1);
+  }
+
+  // Initialize Google Calendar (reuses Gmail OAuth credentials)
+  if (initCalendar()) {
+    logger.info('Google Calendar ready');
   }
 
   // Start subsystems (independently of connection handler)

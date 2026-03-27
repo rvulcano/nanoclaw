@@ -5,6 +5,7 @@ import path from 'path';
 import makeWASocket, {
   Browsers,
   DisconnectReason,
+  downloadMediaMessage,
   WASocket,
   fetchLatestWaWebVersion,
   makeCacheableSignalKeyStore,
@@ -19,6 +20,7 @@ import {
 } from '../config.js';
 import { getLastGroupSync, setLastGroupSync, updateChatName } from '../db.js';
 import { logger } from '../logger.js';
+import { transcribeAudio } from '../transcription.js';
 import {
   Channel,
   OnInboundMessage,
@@ -203,12 +205,38 @@ export class WhatsAppChannel implements Channel {
           // Only deliver full message for registered groups
           const groups = this.opts.registeredGroups();
           if (groups[chatJid]) {
-            const content =
+            let content =
               normalized.conversation ||
               normalized.extendedTextMessage?.text ||
               normalized.imageMessage?.caption ||
               normalized.videoMessage?.caption ||
               '';
+
+            // Transcribe voice messages
+            if (!content && normalized.audioMessage) {
+              try {
+                const buffer = await downloadMediaMessage(
+                  msg,
+                  'buffer',
+                  {},
+                  { logger, reuploadRequest: this.sock.updateMediaMessage },
+                );
+                const mimetype =
+                  normalized.audioMessage.mimetype || 'audio/ogg';
+                const transcript = await transcribeAudio(
+                  buffer as Buffer,
+                  mimetype,
+                );
+                if (transcript) {
+                  content = `[Áudio]: ${transcript}`;
+                } else {
+                  content = '[Áudio: transcrição indisponível]';
+                }
+              } catch (err) {
+                logger.error({ err }, 'Failed to download/transcribe audio');
+                content = '[Áudio: erro na transcrição]';
+              }
+            }
 
             // Skip protocol messages with no text content (encryption keys, read receipts, etc.)
             if (!content) continue;
