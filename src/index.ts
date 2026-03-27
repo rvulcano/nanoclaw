@@ -56,7 +56,7 @@ import {
   loadSenderAllowlist,
   shouldDropMessage,
 } from './sender-allowlist.js';
-import { initCalendar } from './google-calendar.js';
+import { startCalendarReminders } from './calendar-reminders.js';
 import { startSchedulerLoop } from './task-scheduler.js';
 import { Channel, NewMessage, RegisteredGroup } from './types.js';
 import { logger } from './logger.js';
@@ -597,11 +597,6 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  // Initialize Google Calendar (reuses Gmail OAuth credentials)
-  if (initCalendar()) {
-    logger.info('Google Calendar ready');
-  }
-
   // Start subsystems (independently of connection handler)
   startSchedulerLoop({
     registeredGroups: () => registeredGroups,
@@ -653,6 +648,20 @@ async function main(): Promise<void> {
       }
     },
   });
+  // Start Google Calendar reminders (9h today's events, 23h tomorrow's events)
+  startCalendarReminders({
+    registeredGroups: () => registeredGroups,
+    sendMessage: async (jid, rawText) => {
+      const channel = findChannel(channels, jid);
+      if (!channel) {
+        logger.warn({ jid }, 'No channel for calendar reminder');
+        return;
+      }
+      const text = formatOutbound(rawText);
+      if (text) await channel.sendMessage(jid, text);
+    },
+  });
+
   queue.setProcessMessagesFn(processGroupMessages);
   recoverPendingMessages();
   startMessageLoop().catch((err) => {

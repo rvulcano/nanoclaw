@@ -250,6 +250,18 @@ Read `/workspace/project/data/registered_groups.json` and format it nicely.
 
 ---
 
+## Google Calendar
+
+O arquivo `/workspace/global/calendar-events.json` contém os eventos dos próximos 5 dias (atualizado a cada 30 minutos). Quando o usuário perguntar sobre agenda, compromissos ou eventos:
+
+1. Leia `/workspace/global/calendar-events.json`
+2. Formate os eventos de forma clara para WhatsApp
+3. Agrupe por dia quando mostrar múltiplos dias
+
+Lembretes automáticos são enviados às 9h (eventos do dia) e 23h (eventos de amanhã).
+
+---
+
 ## Global Memory
 
 You can read and write to `/workspace/project/groups/global/CLAUDE.md` for facts that should apply to all groups. Only update global memory when explicitly asked to "remember this globally" or similar.
